@@ -1,8 +1,26 @@
-# LaunchDarkly Funnel Experiment Runner
-This is likely not useful for you to copy and run! It's a script I created to run a highly specific funnel experiment, which contains three primary funnel steps and two secondary metrics to track along the way.
+# LaunchDarkly AI Config Simulator
 
-Feel free to peruse and reach out if you have questions on what I did and why :)
+A Python script that simulates user interactions with LaunchDarkly's AI configurations and generates synthetic tracking data.
 
-For what it's worth, `.env.example` has exactly the values (except my SDK key) I used to get these results:
-![Probability Report](<Probability_report.png>)
-![Secondary Metrics](<Secondary_metrics.png>)
+## Overview
+
+This tool simulates user interactions with different AI model configurations in LaunchDarkly, tracking:
+- Generation events
+- CSAT (Customer Satisfaction) feedback
+- Token usage (input, output, and total)
+
+## Features
+
+- Supports multiple AI model variants:
+  - Full Model (GPT-4)
+  - Mini Model
+  - French Language Model
+  - Industrial Model
+- Generates random but configurable:
+  - CSAT scores
+  - Token usage metrics
+  - User contexts
+
+## Setup
+
+1. Install dependencies:
