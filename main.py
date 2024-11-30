@@ -7,6 +7,7 @@ from ldai.tracker import FeedbackKind, TokenUsage
 import json
 import os
 import random
+import time
 from utils.create_context import create_multi_context
 
 
@@ -89,9 +90,21 @@ def callLD():
 
     # Primary loop to evaluate flags and send track events
     for i in range(NUMBER_OF_ITERATIONS):
+
         context = create_multi_context()
         config = aiclient.config(
             'ai-config--self-service-chatbot', context, fallback_value)
+
+        '''Flag eval for testing purposes'''    
+        flag_variation = ldclient.get().variation('test-flag', context, False)
+        print(f"Flag variation: {flag_variation}")
+
+        ldclient.get().track('latency', context, 50)
+        print(f"Latency tracked")
+
+        ldclient.get().track('error-rate', context)
+        print(f"Error rate tracked")
+        '''End of flag eval for testing purposes'''
 
         version_key = config.tracker.version_key
         print(f"Version key: {version_key}")
@@ -194,6 +207,8 @@ def callLD():
             print(f"Successfully tracked activity for industrial model")
         else:
             print(f"No matching version key found for {version_key}")
+
+        time.sleep(.5)
 
 
 '''
