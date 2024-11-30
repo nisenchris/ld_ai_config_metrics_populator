@@ -92,8 +92,7 @@ def callLD():
     for i in range(NUMBER_OF_ITERATIONS):
 
         context = create_multi_context()
-        config = aiclient.config(
-            'ai-config--self-service-chatbot', context, fallback_value)
+        config = aiclient.config('ai-config--self-service-chatbot', context, fallback_value)
 
         '''Flag eval for testing purposes'''    
         flag_variation = ldclient.get().variation('test-flag', context, False)
@@ -118,18 +117,16 @@ def callLD():
 
         # Track generation count
         config.tracker.track_success()
-        # ldclient.get().track('$ld:ai:generation', context, track_data, 1)
-        print(f"Generation for {context} tracked using {track_data}")
 
         # Track CSAT and token usage
         # Full 4o model
         if version_key == "565272b1-bf06-4fbf-89f6-a5b819fc87d5":
             if csat_tracker(FULL_MODEL_CSAT):
-                # config.tracker.track_feedback({"kind": FeedbackKind.Positive})
-                ldclient.get().track('$ld:ai:feedback:user:positive', context, track_data, 1)
+                config.tracker.track_feedback({"kind": FeedbackKind.Positive})
+                # ldclient.get().track('$ld:ai:feedback:user:positive', context, track_data, 1)
             else:
-                # config.tracker.track_feedback({"kind": FeedbackKind.Negative})
-                ldclient.get().track('$ld:ai:feedback:user:negative', context, track_data, 1)
+                config.tracker.track_feedback({"kind": FeedbackKind.Negative})
+                # ldclient.get().track('$ld:ai:feedback:user:negative', context, track_data, 1)
 
             input_tokens = random.randint(
                 FULL_MODEL_INPUT_TOKENS[0], FULL_MODEL_INPUT_TOKENS[1])
@@ -137,9 +134,16 @@ def callLD():
                 FULL_MODEL_OUTPUT_TOKENS[0], FULL_MODEL_OUTPUT_TOKENS[1])
             total_tokens = input_tokens + output_tokens
 
-            ldclient.get().track('$ld:ai:tokens:input', context, track_data, input_tokens)
-            ldclient.get().track('$ld:ai:tokens:output', context, track_data, output_tokens)
-            ldclient.get().track('$ld:ai:tokens:total', context, track_data, total_tokens)
+            tokens = TokenUsage(
+                total_tokens=total_tokens,
+                prompt_tokens=input_tokens,
+                completion_tokens=output_tokens
+            )
+            config.tracker.track_tokens(tokens)
+
+            # ldclient.get().track('$ld:ai:tokens:input', context, track_data, input_tokens)
+            # ldclient.get().track('$ld:ai:tokens:output', context, track_data, output_tokens)
+            # ldclient.get().track('$ld:ai:tokens:total', context, track_data, total_tokens)
 
             print(f"Successfully tracked activity for full model")
 
@@ -158,9 +162,16 @@ def callLD():
                 MINI_MODEL_OUTPUT_TOKENS[0], MINI_MODEL_OUTPUT_TOKENS[1])
             total_tokens = input_tokens + output_tokens
 
-            ldclient.get().track('$ld:ai:tokens:input', context, track_data, input_tokens)
-            ldclient.get().track('$ld:ai:tokens:output', context, track_data, output_tokens)
-            ldclient.get().track('$ld:ai:tokens:total', context, track_data, total_tokens)
+            tokens = TokenUsage(
+                total_tokens=total_tokens,
+                prompt_tokens=input_tokens,
+                completion_tokens=output_tokens
+            )
+            config.tracker.track_tokens(tokens)
+
+            # ldclient.get().track('$ld:ai:tokens:input', context, track_data, input_tokens)
+            # ldclient.get().track('$ld:ai:tokens:output', context, track_data, output_tokens)
+            # ldclient.get().track('$ld:ai:tokens:total', context, track_data, total_tokens)
 
             print(f"Successfully tracked activity for mini model")
 
@@ -179,9 +190,16 @@ def callLD():
                 FRENCH_OUTPUT_TOKENS[0], FRENCH_OUTPUT_TOKENS[1])
             total_tokens = input_tokens + output_tokens
 
-            ldclient.get().track('$ld:ai:tokens:input', context, track_data, input_tokens)
-            ldclient.get().track('$ld:ai:tokens:output', context, track_data, output_tokens)
-            ldclient.get().track('$ld:ai:tokens:total', context, track_data, total_tokens)
+            tokens = TokenUsage(
+                total_tokens=total_tokens,
+                prompt_tokens=input_tokens,
+                completion_tokens=output_tokens
+            )
+            config.tracker.track_tokens(tokens)
+
+            # ldclient.get().track('$ld:ai:tokens:input', context, track_data, input_tokens)
+            # ldclient.get().track('$ld:ai:tokens:output', context, track_data, output_tokens)
+            # ldclient.get().track('$ld:ai:tokens:total', context, track_data, total_tokens)
 
             print(f"Successfully tracked activity for french model")
 
@@ -200,9 +218,16 @@ def callLD():
                 INDUSTRIAL_OUTPUT_TOKENS[0], INDUSTRIAL_OUTPUT_TOKENS[1])
             total_tokens = input_tokens + output_tokens
 
-            ldclient.get().track('$ld:ai:tokens:input', context, track_data, input_tokens)
-            ldclient.get().track('$ld:ai:tokens:output', context, track_data, output_tokens)
-            ldclient.get().track('$ld:ai:tokens:total', context, track_data, total_tokens)
+            tokens = TokenUsage(
+                total_tokens=total_tokens,
+                prompt_tokens=input_tokens,
+                completion_tokens=output_tokens
+            )
+            config.tracker.track_tokens(tokens)
+
+            # ldclient.get().track('$ld:ai:tokens:input', context, track_data, input_tokens)
+            # ldclient.get().track('$ld:ai:tokens:output', context, track_data, output_tokens)
+            # ldclient.get().track('$ld:ai:tokens:total', context, track_data, total_tokens)
 
             print(f"Successfully tracked activity for industrial model")
         else:
