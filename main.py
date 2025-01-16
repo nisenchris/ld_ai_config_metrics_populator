@@ -2,7 +2,7 @@ from dotenv import load_dotenv  # pip install python-dotenv
 import ldclient
 from ldclient.config import Config
 from ldclient.context import Context
-from ldai.client import LDAIClient
+from ldai.client import LDAIClient, AIConfig, ModelConfig, LDMessage, ProviderConfig
 from ldai.tracker import FeedbackKind, TokenUsage
 import json
 import os
@@ -23,22 +23,23 @@ CONFIG_KEY = os.environ.get('CONFIG_KEY')
 # CSAT values
 FULL_MODEL_CSAT = int(os.environ.get('FULL_MODEL_CSAT'))
 MINI_MODEL_CSAT = int(os.environ.get('MINI_MODEL_CSAT'))
-FRENCH_CSAT = int(os.environ.get('FRENCH_CSAT'))
-INDUSTRIAL_CSAT = int(os.environ.get('INDUSTRIAL_CSAT'))
+CLAUDE_CSAT = int(os.environ.get('CLAUDE_CSAT'))
 
 # Token ranges
 FULL_MODEL_INPUT_TOKENS = json.loads(os.environ.get('FULL_MODEL_INPUT_TOKENS'))
 MINI_MODEL_INPUT_TOKENS = json.loads(os.environ.get('MINI_MODEL_INPUT_TOKENS'))
-FRENCH_INPUT_TOKENS = json.loads(os.environ.get('FRENCH_INPUT_TOKENS'))
-INDUSTRIAL_INPUT_TOKENS = json.loads(os.environ.get('INDUSTRIAL_INPUT_TOKENS'))
+CLAUDE_INPUT_TOKENS = json.loads(os.environ.get('CLAUDE_INPUT_TOKENS'))
 
 FULL_MODEL_OUTPUT_TOKENS = json.loads(
     os.environ.get('FULL_MODEL_OUTPUT_TOKENS'))
 MINI_MODEL_OUTPUT_TOKENS = json.loads(
     os.environ.get('MINI_MODEL_OUTPUT_TOKENS'))
-FRENCH_OUTPUT_TOKENS = json.loads(os.environ.get('FRENCH_OUTPUT_TOKENS'))
-INDUSTRIAL_OUTPUT_TOKENS = json.loads(
-    os.environ.get('INDUSTRIAL_OUTPUT_TOKENS'))
+CLAUDE_OUTPUT_TOKENS = json.loads(os.environ.get('CLAUDE_OUTPUT_TOKENS'))
+
+# Duration ranges in milliseconds [min, max]
+FULL_MODEL_DURATION = json.loads(os.environ.get('FULL_MODEL_DURATION'))
+MINI_MODEL_DURATION = json.loads(os.environ.get('MINI_MODEL_DURATION'))
+CLAUDE_DURATION = json.loads(os.environ.get('CLAUDE_DURATION'))
 
 # Number of iterations
 NUMBER_OF_ITERATIONS = int(os.environ.get('NUMBER_OF_ITERATIONS'))
@@ -48,27 +49,16 @@ ldclient.set_config(Config(SDK_KEY))
 aiclient = LDAIClient(ldclient.get())
 
 # Fallback value for the config
-fallback_value = {
-    "model": {
-        "id": "gpt-4o",
-        "parameters": {
-            "maxTokens": 4096,
-            "temperature": 0.7
-        }
-    },
-    "messages": [
-        {
-            "content": "You are an expert in a software system, explaining concepts to users in a clear and concise manner.",
-            "role": "system"
-        },
-        {
-            "content": "I am a user of the system looking for help.",
-            "role": "user"
-        }
-    ],
-    "enabled": True
-}
 
+fallback_value = AIConfig(
+    enabled=True,
+    model=ModelConfig(
+        name="expert-gpt-4-o",
+        parameters={"temperature": 0.8},
+    ),
+    messages=[LDMessage(role="system", content="")],
+    provider=ProviderConfig(name="gpt-4o"),
+)
 
 '''
 CSAT true or false calculator.
@@ -84,40 +74,38 @@ def csat_tracker(percent_chance):
 '''
 Evaluate the flags for randomly generated users, and make the track() calls to LaunchDarkly
 '''
-
-
 def callLD():
 
     # Primary loop to evaluate config and send track events
     for i in range(NUMBER_OF_ITERATIONS):
 
         context = create_multi_context()
-        config = aiclient.config(CONFIG_KEY, context, fallback_value)
-
-        version_key = config.tracker.version_key
-        print(f"Version key: {version_key}")
+        config, tracker = aiclient.config(CONFIG_KEY, context, fallback_value)
+        variation_key = tracker._variation_key
+        print(f"Variation key: {variation_key}")
+        print(f"Tracking number: {i} / {NUMBER_OF_ITERATIONS}")
 
         # Track CSAT and token usage
         # Full 4o model - still differentiating variation by version key, not human friendly name
-        if version_key == "565272b1-bf06-4fbf-89f6-a5b819fc87d5":
+        if variation_key == "expert-gpt-4-o":
             
-            # Using human friendly name for versionKey
+            # Using human friendly name for variationKey
             track_data = {
-                'versionKey': "expert-gpt-4-o",
+                'variationKey': "expert-gpt-4-o",
                 'configKey': CONFIG_KEY
             }
             print(f"Track data: {track_data}")
 
             # Track generation count
-            # config.tracker.track_success()
-            ldclient.get().track('$ld:ai:generation', context, track_data, 1)
+            tracker.track_success()
+            # ldclient.get().track('$ld:ai:generation', context, track_data, 1)
 
             if csat_tracker(FULL_MODEL_CSAT):
-                # config.tracker.track_feedback({"kind": FeedbackKind.Positive})
-                ldclient.get().track('$ld:ai:positive', context, track_data, 1)
+                tracker.track_feedback({"kind": FeedbackKind.Positive})
+                # ldclient.get().track('$ld:ai:positive', context, track_data, 1)
             else:
-                # config.tracker.track_feedback({"kind": FeedbackKind.Negative})
-                ldclient.get().track('$ld:ai:negative', context, track_data, 1)
+                tracker.track_feedback({"kind": FeedbackKind.Negative})
+                # ldclient.get().track('$ld:ai:negative', context, track_data, 1)
 
             input_tokens = random.randint(
                 FULL_MODEL_INPUT_TOKENS[0], FULL_MODEL_INPUT_TOKENS[1])
@@ -126,34 +114,34 @@ def callLD():
             total_tokens = input_tokens + output_tokens
 
             # NATIVE METHOD
-            # tokens = TokenUsage(
-            #     total_tokens=total_tokens,
-            #     prompt_tokens=input_tokens,
-            #     completion_tokens=output_tokens
-            # )
-            # config.tracker.track_tokens(tokens)
+            tokens = TokenUsage(
+                total=total_tokens,
+                input=input_tokens,
+                output=output_tokens
+            )
+            tracker.track_tokens(tokens)
 
             # LDCLIENT METHOD
-            ldclient.get().track('$ld:ai:tokens:input', context, track_data, input_tokens)
-            ldclient.get().track('$ld:ai:tokens:output', context, track_data, output_tokens)
-            ldclient.get().track('$ld:ai:tokens:total', context, track_data, total_tokens)
+            # ldclient.get().track('$ld:ai:tokens:input', context, track_data, input_tokens)
+            # ldclient.get().track('$ld:ai:tokens:output', context, track_data, output_tokens)
+            # ldclient.get().track('$ld:ai:tokens:total', context, track_data, total_tokens)
 
             print(f"Successfully tracked activity for full model")
 
         # Mini 4o model
-        elif version_key == "6977453a-71f1-48d9-ab35-4227d6d83df2":
+        elif variation_key == "expert-gpt-4-o-mini":
             track_data = {
-                'versionKey': "expert-gpt-4-o-mini",
+                'variationKey': "expert-gpt-4-o-mini",
                 'configKey': CONFIG_KEY
             }
             print(f"Track data: {track_data}")
             ldclient.get().track('$ld:ai:generation', context, track_data, 1)
             if csat_tracker(MINI_MODEL_CSAT):
-                # config.tracker.track_feedback({"kind": FeedbackKind.Positive})
-                ldclient.get().track('$ld:ai:positive', context, track_data, 1)
+                tracker.track_feedback({"kind": FeedbackKind.Positive})
+                # ldclient.get().track('$ld:ai:positive', context, track_data, 1)
             else:
-                # config.tracker.track_feedback({"kind": FeedbackKind.Negative})
-                ldclient.get().track('$ld:ai:negative', context, track_data, 1)
+                tracker.track_feedback({"kind": FeedbackKind.Negative})
+                # ldclient.get().track('$ld:ai:negative', context, track_data, 1)
 
             input_tokens = random.randint(
                 MINI_MODEL_INPUT_TOKENS[0], MINI_MODEL_INPUT_TOKENS[1])
@@ -161,92 +149,60 @@ def callLD():
                 MINI_MODEL_OUTPUT_TOKENS[0], MINI_MODEL_OUTPUT_TOKENS[1])
             total_tokens = input_tokens + output_tokens
 
-            # tokens = TokenUsage(
-            #     total_tokens=total_tokens,
-            #     prompt_tokens=input_tokens,
-            #     completion_tokens=output_tokens
-            # )
-            # config.tracker.track_tokens(tokens)
+            tokens = TokenUsage(
+                total=total_tokens,
+                input=input_tokens,
+                output=output_tokens
+            )
+            tracker.track_tokens(tokens)
 
-            ldclient.get().track('$ld:ai:tokens:input', context, track_data, input_tokens)
-            ldclient.get().track('$ld:ai:tokens:output', context, track_data, output_tokens)
-            ldclient.get().track('$ld:ai:tokens:total', context, track_data, total_tokens)
+            # ldclient.get().track('$ld:ai:tokens:input', context, track_data, input_tokens)
+            # ldclient.get().track('$ld:ai:tokens:output', context, track_data, output_tokens)
+            # ldclient.get().track('$ld:ai:tokens:total', context, track_data, total_tokens)
 
             print(f"Successfully tracked activity for mini model")
 
-        # French model
-        elif version_key == "f7f71473-513c-4130-80a8-f26cc86d7b8f":
+        # CLAUDE model
+        elif variation_key == "bedrock-claude-3-5-sonnet":
             track_data = {
-                'versionKey': "french-guillotine",
+                'variationKey': "bedrock-claude-3-5-sonnet",
                 'configKey': CONFIG_KEY
             }
             print(f"Track data: {track_data}")
-            ldclient.get().track('$ld:ai:generation', context, track_data, 1)
-            if csat_tracker(FRENCH_CSAT):
-                # config.tracker.track_feedback({"kind": FeedbackKind.Positive})
-                ldclient.get().track('$ld:ai:positive', context, track_data, 1)
+            tracker.track_success()
+            # ldclient.get().track('$ld:ai:generation', context, track_data, 1)
+            if csat_tracker(CLAUDE_CSAT):
+                tracker.track_feedback({"kind": FeedbackKind.Positive})
+                # ldclient.get().track('$ld:ai:positive', context, track_data, 1)
             else:
-                # config.tracker.track_feedback({"kind": FeedbackKind.Negative})
-                ldclient.get().track('$ld:ai:negative', context, track_data, 1)
+                tracker.track_feedback({"kind": FeedbackKind.Negative})
+                # ldclient.get().track('$ld:ai:negative', context, track_data, 1)
 
             input_tokens = random.randint(
-                FRENCH_INPUT_TOKENS[0], FRENCH_INPUT_TOKENS[1])
+                CLAUDE_INPUT_TOKENS[0], CLAUDE_INPUT_TOKENS[1])
             output_tokens = random.randint(
-                FRENCH_OUTPUT_TOKENS[0], FRENCH_OUTPUT_TOKENS[1])
+                CLAUDE_OUTPUT_TOKENS[0], CLAUDE_OUTPUT_TOKENS[1])
             total_tokens = input_tokens + output_tokens
 
             # NATIVE METHOD
-            # tokens = TokenUsage(
-            #     total_tokens=total_tokens,
-            #     prompt_tokens=input_tokens,
-            #     completion_tokens=output_tokens
-            # )
-            # config.tracker.track_tokens(tokens)
+            tokens = TokenUsage(
+                total=total_tokens,
+                input=input_tokens,
+                output=output_tokens
+            )
+            tracker.track_tokens(tokens)
 
             # LDCLIENT METHOD   
-            ldclient.get().track('$ld:ai:tokens:input', context, track_data, input_tokens)
-            ldclient.get().track('$ld:ai:tokens:output', context, track_data, output_tokens)
-            ldclient.get().track('$ld:ai:tokens:total', context, track_data, total_tokens)
+            # ldclient.get().track('$ld:ai:tokens:input', context, track_data, input_tokens)
+            # ldclient.get().track('$ld:ai:tokens:output', context, track_data, output_tokens)
+            # ldclient.get().track('$ld:ai:tokens:total', context, track_data, total_tokens)
 
-            print(f"Successfully tracked activity for french model")
+            print(f"Successfully tracked activity for CLAUDE model")
 
-        # Industrial model
-        elif version_key == "8edcb831-670f-4471-b85e-b86d4b502603":
-            track_data = {
-                'versionKey': "industrial-guillotine",
-                'configKey': CONFIG_KEY
-            }
-            print(f"Track data: {track_data}")
-            ldclient.get().track('$ld:ai:generation', context, track_data, 1)
-            if csat_tracker(INDUSTRIAL_CSAT):
-                # config.tracker.track_feedback({"kind": FeedbackKind.Positive})
-                ldclient.get().track('$ld:ai:positive', context, track_data, 1)
-            else:
-                # config.tracker.track_feedback({"kind": FeedbackKind.Negative})
-                ldclient.get().track('$ld:ai:negative', context, track_data, 1)
-
-            input_tokens = random.randint(
-                INDUSTRIAL_INPUT_TOKENS[0], INDUSTRIAL_INPUT_TOKENS[1])
-            output_tokens = random.randint(
-                INDUSTRIAL_OUTPUT_TOKENS[0], INDUSTRIAL_OUTPUT_TOKENS[1])
-            total_tokens = input_tokens + output_tokens
-
-            # tokens = TokenUsage(
-            #     total_tokens=total_tokens,
-            #     prompt_tokens=input_tokens,
-            #     completion_tokens=output_tokens
-            # )
-            # config.tracker.track_tokens(tokens)
-
-            ldclient.get().track('$ld:ai:tokens:input', context, track_data, input_tokens)
-            ldclient.get().track('$ld:ai:tokens:output', context, track_data, output_tokens)
-            ldclient.get().track('$ld:ai:tokens:total', context, track_data, total_tokens)
-
-            print(f"Successfully tracked activity for industrial model")
         else:
-            print(f"No matching version key found for {version_key}")
+            print(f"No matching version key found for {variation_key}")
 
-        time.sleep(.5)
+        time.sleep(.05)
 
 
 '''
