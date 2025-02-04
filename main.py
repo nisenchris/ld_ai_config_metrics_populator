@@ -113,6 +113,10 @@ def callLD():
                 FULL_MODEL_OUTPUT_TOKENS[0], FULL_MODEL_OUTPUT_TOKENS[1])
             total_tokens = input_tokens + output_tokens
 
+            duration = random.randint(
+                FULL_MODEL_DURATION[0], FULL_MODEL_DURATION[1])
+            tracker.track_duration(duration)
+
             # NATIVE METHOD
             tokens = TokenUsage(
                 total=total_tokens,
@@ -149,6 +153,10 @@ def callLD():
                 MINI_MODEL_OUTPUT_TOKENS[0], MINI_MODEL_OUTPUT_TOKENS[1])
             total_tokens = input_tokens + output_tokens
 
+            duration = random.randint(
+                MINI_MODEL_DURATION[0], MINI_MODEL_DURATION[1])
+            tracker.track_duration(duration)
+
             tokens = TokenUsage(
                 total=total_tokens,
                 input=input_tokens,
@@ -183,6 +191,10 @@ def callLD():
             output_tokens = random.randint(
                 CLAUDE_OUTPUT_TOKENS[0], CLAUDE_OUTPUT_TOKENS[1])
             total_tokens = input_tokens + output_tokens
+
+            duration = random.randint(
+                CLAUDE_DURATION[0], CLAUDE_DURATION[1])
+            tracker.track_duration(duration)
 
             # NATIVE METHOD
             tokens = TokenUsage(
