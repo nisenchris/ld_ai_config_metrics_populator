@@ -10,7 +10,8 @@ Construct a user context
 def create_user_context():
   user_key = "usr-" + str(uuid.uuid4())
   name = f'{names.get_first_name()} {names.get_last_name()}'
-  plan = random.choice(['platinum', 'silver', 'gold', 'diamond'])
+  # plan = random.choice(['platinum', 'silver', 'gold', 'diamond'])
+  plan = random.choice(['platinum', 'gold', 'diamond'])
   role = random.choice(['reader', 'writer', 'admin'])
   metro = random.choice(['New York', 'Chicago', 'Minneapolis', 'Atlanta', 'Los Angeles', 'San Francisco', 'Denver', 'Boston'])
   age = random.randint(20, 80)
