@@ -14,11 +14,25 @@ from utils.create_context import create_multi_context, create_user_context
 '''
 Get environment variables
 '''
+# Load environment variables from .env file
 load_dotenv()
 
 # Basic config
 SDK_KEY = os.environ.get('SDK_KEY')
-CONFIG_KEY = os.environ.get('CONFIG_KEY')
+
+# Read CONFIG_KEY directly from .env file
+with open('.env', 'r') as env_file:
+    for line in env_file:
+        if line.strip() and not line.startswith('#'):
+            key, value = line.strip().split('=', 1)
+            if key == 'CONFIG_KEY':
+                CONFIG_KEY = value
+                break
+    else:
+        # Fallback if not found in .env
+        CONFIG_KEY = "ai-configs-exp-test"  
+
+print(f"Using CONFIG_KEY: {CONFIG_KEY}")
 
 # CSAT values
 FULL_MODEL_CSAT = int(os.environ.get('FULL_MODEL_CSAT'))
@@ -105,11 +119,11 @@ def callLD():
 
         # Track CSAT and token usage
         # Full 4o model - still differentiating variation by version key, not human friendly name
-        if variation_key == "expert-gpt-4-o":
+        if variation_key == "expert-gpt-4-o" or variation_key == "gpt-4-o":
             
             # Using human friendly name for variationKey
             track_data = {
-                'variationKey': "expert-gpt-4-o",
+                'variationKey': variation_key,
                 'configKey': CONFIG_KEY
             }
             print(f"Track data: {track_data}")
@@ -152,9 +166,9 @@ def callLD():
                 print(f"Successfully tracked activity for full model")
 
         # Mini 4o model
-        elif variation_key == "expert-gpt-4-o-mini":
+        elif variation_key == "expert-gpt-4-o-mini" or variation_key == "gpt-4-o-mini":
             track_data = {
-                'variationKey': "expert-gpt-4-o-mini",
+                'variationKey': variation_key,
                 'configKey': CONFIG_KEY
             }
             print(f"Track data: {track_data}")
@@ -196,9 +210,9 @@ def callLD():
                 print(f"Successfully tracked activity for mini model")
 
         # CLAUDE model
-        elif variation_key == "bedrock-claude-3-5-sonnet":
+        elif variation_key == "bedrock-claude-3-5-sonnet" or variation_key == "claude-3-5-sonnet":
             track_data = {
-                'variationKey': "bedrock-claude-3-5-sonnet",
+                'variationKey': variation_key,
                 'configKey': CONFIG_KEY
             }
             print(f"Track data: {track_data}")
