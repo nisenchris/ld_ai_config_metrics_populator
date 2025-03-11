@@ -5,21 +5,24 @@ A Python script that simulates user interactions with LaunchDarkly's AI configur
 ## Overview
 
 This tool simulates user interactions with different AI model configurations in LaunchDarkly, tracking:
-- Generation events
+- Generation events (successes and errors)
 - CSAT (Customer Satisfaction) feedback
 - Token usage (input, output, and total)
+- Completion duration
+- Time to first token
 
 ## Features
 
 - Supports multiple AI model variants:
-  - Full Model (GPT-4)
-  - Mini Model
-  - French Language Model
-  - Industrial Model
+  - GPT-4o (Full Model)
+  - GPT-4o Mini (Mini Model)
+  - Claude 3.5 Sonnet
 - Generates random but configurable:
   - CSAT scores
+  - Error rates
   - Token usage metrics
-  - User contexts
+  - Duration metrics
+  - User contexts with multiple context kinds
 
 ## Prerequisites
 
@@ -51,7 +54,16 @@ This tool simulates user interactions with different AI model configurations in 
     cp .env.example .env
     ```
 
-5. Run the script:
+5. Edit the `.env` file to update the following required variables:
+    - `SDK_KEY`: Your LaunchDarkly SDK key (required)
+    - `CONFIG_KEY`: The feature AI Config key to evaluate 
+
+6. In LaunchDarkly, ensure your AI Config has variations with the following variation keys:
+   - `gpt-4-o` - For the full GPT-4o model
+   - `gpt-4-o-mini` - For the GPT-4o mini model
+   - `claude-3-5-sonnet` - For the Claude 3.5 Sonnet model
+
+7. Run the script:
     ```sh
     python main.py
     ```
@@ -63,18 +75,42 @@ The script will simulate user interactions and track various metrics using the L
 ### Key Functions
 
 - `csat_tracker(percent_chance)`: Determines if a CSAT event should be tracked based on a given percentage chance.
-- `create_multi_context()`: Creates a multi-context combining user, device, and organization contexts.
+- `error_occurred(error_rate)`: Determines if an error should be simulated based on a given error rate.
+- `create_multi_context()`: Creates a multi-context combining user, device, organization, and request contexts.
 - `callLD()`: Main function to evaluate flags and send track events to LaunchDarkly.
+
+### Context Types
+
+The simulator uses a multi-context approach with four context kinds:
+
+1. **User Context**: Includes attributes like name, plan, role, metro, and age.
+2. **Device Context**: Includes attributes like OS, type, and version.
+3. **Organization Context**: Includes attributes like name and region.
+4. **Request Context**: Includes attributes like type, plan, priority, and source.
 
 ### Example Output
 
 The script will print various tracking information to the console, such as:
-- Flag variation
-- Latency tracked
-- Error rate tracked
-- Version key
-- Track data
-- Successfully tracked activity for different models
+- Flag variation key
+- Tracking number and progress
+- Track data (variation key and config key)
+- Success/error tracking
+- Token usage metrics
+- Duration metrics
+- Time to first token metrics
+
+## Environment Variables
+
+The `.env` file controls various aspects of the simulation:
+
+- `SDK_KEY`: Your LaunchDarkly SDK key
+- `CONFIG_KEY`: The feature flag key to evaluate (e.g., "chatbot-model-version")
+- CSAT success rates for each model
+- Error rates for each model
+- Token ranges for input and output
+- Duration ranges
+- Time to first token ranges
+- Number of iterations to run
 
 ## Contributing
 
