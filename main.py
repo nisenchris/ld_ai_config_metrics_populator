@@ -15,10 +15,11 @@ from utils.create_context import create_multi_context, create_user_context
 Get environment variables
 '''
 # Load environment variables from .env file
-load_dotenv()
+load_dotenv(override=True)  # Force reload of environment variables
 
 # Basic config
 SDK_KEY = os.environ.get('SDK_KEY')
+print(f"Using SDK_KEY: {SDK_KEY}")
 
 # Read CONFIG_KEY directly from .env file
 with open('.env', 'r') as env_file:
@@ -112,8 +113,10 @@ def callLD():
     for i in range(NUMBER_OF_ITERATIONS):
 
         context = create_multi_context()
+        print(f"Created multi-context with request: {context}")
         config, tracker = aiclient.config(CONFIG_KEY, context, fallback_value)
         variation_key = tracker._variation_key
+        
         print(f"Variation key: {variation_key}")
         print(f"Tracking number: {i} / {NUMBER_OF_ITERATIONS}")
 
