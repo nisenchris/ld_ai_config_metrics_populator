@@ -68,14 +68,35 @@ def create_organization_context():
   return org_context
 
 '''
-Construct a multi context: User, Device, and Organization
+Construct a request context for AI chatbot interactions
+'''
+def create_request_context():
+  request_id = "req-" + str(uuid.uuid4())
+  request_type = random.choice(["chat", "completion", "query"])
+  plan = random.choice(["free", "basic", "premium", "enterprise"])
+  priority = random.choice(["high", "medium", "low"])
+  source = random.choice(["web", "mobile", "api"])
+  
+  request_context = Context.builder(request_id) \
+  .kind("request") \
+  .set("type", request_type) \
+  .set("plan", plan) \
+  .set("priority", priority) \
+  .set("source", source) \
+  .build()
+
+  return request_context
+
+'''
+Construct a multi context: User, Device, Organization, and Request
 '''
 def create_multi_context():
 
   multi_context = Context.create_multi(
   create_user_context(),
   create_device_context(),
-  create_organization_context()
+  create_organization_context(),
+  create_request_context()
   )
 
   return multi_context
