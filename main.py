@@ -122,7 +122,7 @@ def callLD():
 
         # Track CSAT and token usage
         # Full 4o model - still differentiating variation by version key, not human friendly name
-        if variation_key == "expert-gpt-4-o" or variation_key == "gpt-4-o":
+        if variation_key == "expert-gpt-4-o" or variation_key == "gpt-4-o" or variation_key == "claude-haiku":
             
             # Using human friendly name for variationKey
             track_data = {
@@ -169,7 +169,7 @@ def callLD():
                 print(f"Successfully tracked activity for full model")
 
         # Mini 4o model
-        elif variation_key == "expert-gpt-4-o-mini" or variation_key == "gpt-4-o-mini":
+        elif variation_key == "expert-gpt-4-o-mini" or variation_key == "gpt-4-o-mini" or variation_key == "cohere-coral":
             track_data = {
                 'variationKey': variation_key,
                 'configKey': CONFIG_KEY
