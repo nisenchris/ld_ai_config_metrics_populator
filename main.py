@@ -169,7 +169,7 @@ def callLD():
                 print(f"Successfully tracked activity for full model")
 
         # Mini 4o model
-        elif variation_key == "expert-gpt-4-o-mini" or variation_key == "gpt-4-o-mini" or variation_key == "cohere-coral":
+        elif variation_key == "expert-gpt-4-o-mini" or variation_key == "gpt-4-o-mini" or variation_key == "cohere-coral" or variation_key == "amazon-nova-pro":
             track_data = {
                 'variationKey': variation_key,
                 'configKey': CONFIG_KEY
@@ -213,7 +213,7 @@ def callLD():
                 print(f"Successfully tracked activity for mini model")
 
         # CLAUDE model
-        elif variation_key == "bedrock-claude-3-5-sonnet" or variation_key == "claude-3-5-sonnet":
+        elif variation_key == "bedrock-claude-3-5-sonnet" or variation_key == "claude-3-5-sonnet" or variation_key == "claude-3-7-sonnet":
             track_data = {
                 'variationKey': variation_key,
                 'configKey': CONFIG_KEY
